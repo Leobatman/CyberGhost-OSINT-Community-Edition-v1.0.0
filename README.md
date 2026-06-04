@@ -1,465 +1,195 @@
 <div align="center">
-  <img src="https://via.placeholder.com/200x200.png?text=CyberGhost+OSINT" alt="CyberGhost Logo" width="200" />
-  <h1>CyberGhost-OSINT</h1>
-<<<<<<< HEAD
-  <p><strong>Plataforma Híbrida de Cyber Threat Intelligence (CTI) e Automação OSINT para Ambientes Corporativos</strong></p>
+  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Ghost_icon.svg/1200px-Ghost_icon.svg.png" width="100" alt="Ghost Logo" style="filter: drop-shadow(0 0 10px #ff0000);">
+  <h1>💀 CyberGhost-OSINT v14.0 💀<br><em>"ULTIMATE GOD MODE" EDITION</em></h1>
+  <p><strong>A Plataforma Híbrida Definitiva de Cyber Threat Intelligence (CTI) e Automação OSINT Passiva</strong></p>
 
   [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+  [![Aiohttp](https://img.shields.io/badge/Aiohttp-Async_Engine-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://docs.aiohttp.org/)
+  [![Rich](https://img.shields.io/badge/Rich-Terminal_UI-magenta.svg?style=for-the-badge&logo=python&logoColor=white)](https://rich.readthedocs.io/)
   [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-009688.svg?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
   [![Neo4j](https://img.shields.io/badge/Neo4j-Graph_DB-008CC1.svg?style=for-the-badge&logo=neo4j&logoColor=white)](https://neo4j.com/)
-  [![Next.js](https://img.shields.io/badge/Next.js-15-black.svg?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
-  [![Celery](https://img.shields.io/badge/Celery-Async-37814A.svg?style=for-the-badge&logo=celery&logoColor=white)](https://docs.celeryq.dev/)
-  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-DB-4169E1.svg?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-  [![Docker](https://img.shields.io/badge/Docker-Containers-2496ED.svg?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
-=======
-  <p><strong>Plataforma Híbrida de Cyber Threat Intelligence (CTI) e Automação OSINT</strong></p>
-
-  [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
-  [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-009688.svg)](https://fastapi.tiangolo.com/)
-  [![Neo4j](https://img.shields.io/badge/Neo4j-Graph_DB-008CC1.svg)](https://neo4j.com/)
-  [![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org/)
->>>>>>> 182240c732e82daa3643f95822317be19e09b33e
 </div>
 
----
-
-<<<<<<< HEAD
-## 📖 Visão Geral
-
-**CyberGhost-OSINT** é uma plataforma de Inteligência de Ameaças (CTI) projetada para orquestrar coletas de Inteligência de Fontes Abertas (OSINT) em larga escala. Centralizando a coleta assíncrona, a plataforma transforma dados de reconhecimento (como ASN, Transparência de Certificados) em artefatos rastreáveis e os correlaciona em um **Knowledge Graph**, permitindo que equipes de SOC descubram relações não-triviais entre vetores de ataque.
-
-Anteriormente concebido como um simples utilitário monolítico de script Bash (agora em `_legacy_deprecated/`), o CyberGhost-OSINT evoluiu para uma arquitetura baseada em **microsserviços** orientada a eventos, com suporte nativo ao ecossistema STIX/TAXII.
+<p align="center">
+  <em>CyberGhost não é um script. É uma arma cibernética. Um ecossistema massivo de reconhecimento focado em extrair a "alma" da infraestrutura do alvo em segundos sem disparar um único alarme.</em>
+</p>
 
 ---
 
-## ⚡ Principais Recursos
+## 📖 Visão Geral e Arquitetura
 
-### ✅ Produção (Implementado)
-* **API Centralizada e Segura (FastAPI):** JWT Auth, CORS, Proteção HSTS, Rate Limiting baseado em IP (via Redis), tudo sob a arquitetura de microsserviços.
-* **Coleta OSINT Assíncrona:** Gerenciada através do Celery e Redis, escalável para longos mapeamentos de infraestrutura ofensiva.
-* **Módulos Nativos de Reconhecimento:** Inclui inteligência BGP/ASN (`recon/asn_intel.py`) e Certificate Transparency (`recon/cert_transparency.py`).
-* **Ecossistema CTI (STIX & TAXII 2.1):** Endpoints nativos para geração de Indicadores STIX 2.1 e um Servidor de Descoberta/Coleção TAXII ativo (`/api/v1/taxii/`).
-* **Frontend Interativo (Next.js 15):** Autenticação em SPA, Dashboard moderno para relatórios e gestão.
-* **Observabilidade:** Monitoramento via Prometheus e OpenTelemetry nativamente acoplados (expostos via endpoint `/metrics`).
-* **Orquestração Docker (Enterprise):** Arquitetura pronta com banco de dados em grafos (Neo4j) e relacional (PostgreSQL + Asyncpg).
+O **CyberGhost-OSINT** opera com uma arquitetura híbrida de dois mundos:
+1.  **CLI Tático (O Fantasma Autônomo):** Um script central assíncrono (`cyberghost.py`) construído em `asyncio` e `aiohttp`. Ele dispara dezenas de tarefas complexas contra o alvo paralelamente, processando portas, DNS, Segredos e Vulnerabilidades na velocidade da luz (um alvo como o Google é completamente varrido em ~30 segundos). Não depende de bancos de dados locais.
+2.  **Enterprise SOC (O Cérebro Central):** Uma infraestrutura pesada baseada em Docker Compose, projetada para Data Centers. Ela pega o poder do CLI e escala isso utilizando o Celery (Workers de Background), RabbitMQ (Mensageria), FastAPI (Servidor Web Central) e o Neo4j (Banco de Dados em Grafo) para cruzar dados (CTI).
 
-### ⚠️ Beta (Em Validação)
-* **Kubernetes Deploy:** Arquivos essenciais como HPA (`hpa.yaml`) e Ingress (`ingress.yaml`) presentes, prontos para a transição para Helm Charts maduros.
-* **Knowledge Graph Syncing:** Nós e correlações populados dinamicamente no Neo4j com base nos resultados das tasks do Celery. A UI gráfica avançada do Frontend ainda se encontra em desenvolvimento.
-
-### 🚀 Roadmap Futuro
-* **Multi-Agent AI (LangGraph):** Orquestração de Agentes Inteligentes (ReconAgent e IntelAgent) para conduzir investigações e gerar relatórios complexos com LLMs.
-* **Graph Data Science (GDS):** Algoritmos automáticos no Neo4j (ex: PageRank, Louvain) aplicados à infraestrutura de atacantes para detecção de botnets e C2.
-* **Gestão Dinâmica de Segredos:** Implementação do HashiCorp Vault.
-* **Integração MISP:** Comunicação Bidirecional (Push/Pull) com MISP, consolidando a plataforma como um hub robusto de CTI.
+### ⚙️ Por debaixo do capô
+Ao executar o motor, o loop do `asyncio.run(run_scan())` é acionado. Um único `ClientSession` compartilha as conexões TCP, mantendo-se aberto. As tarefas de I/O bloqueante (como resolução local de DNS via socket) usam `asyncio.to_thread()`, garantindo que o GIL do Python não trave a interface (escrita inteiramente em `rich.progress`).
 
 ---
 
-## 🏗️ Arquitetura
+## 🔥 ARSENAL DO "ULTIMATE GOD MODE" (v14.0)
 
-```mermaid
-graph TD
-    A[Analista SOC / Usuário] -->|HTTPS (Next.js)| B(Frontend React SPA)
-    B -->|REST / JWT| C{API Gateway / FastAPI}
-    C -->|Transações ACID| D[(PostgreSQL)]
-    C -->|Feed STIX 2.1 / TAXII| E(External Consumers & MISP)
-    C -->|Agendamento de Task| F[Redis Message Broker]
-    F -->|Consome a fila| G[Celery Workers]
-    G -->|Executa Módulos| H(Reconhecimento Ativo/Passivo)
-    H -->|Coleta de Dados| I[ASN Intel, Cert Transparency, etc]
-    G -->|Correlação e Grafos| J[(Neo4j Knowledge Graph)]
-```
+A v14 traz uma postura **100% Passiva e Furtiva**. Ao rodar `--profile godmode`, o robô executa TODOS os seguintes submódulos massivos simultaneamente:
 
-### Estrutura de Diretórios
-```text
-cyberghost-osint/
-├── alembic/            # Gerenciamento de Migrações do banco (ex: stix_support)
-├── backend/            # API Core FastAPI (Auth, Scans, STIX, TAXII, Models)
-├── docker/             # Ambientes e containers (Neo4j, Redis, Prometheus)
-├── frontend/           # Interface Next.js 15 focada em Experiência do Usuário (UX)
-├── kubernetes/         # Definições Manifestos YAML para orquestração (Deploy, HPA)
-├── recon/              # Scripts Especializados de OSINT (asn_intel.py, cert_transparency.py)
-├── tests/              # BDD/TDD: Testes unitários focados na qualidade de código
-├── workers/            # Processamento em Background Assíncrono via Celery
-└── _legacy_deprecated/ # Antigo monolito V1 em Bash (para consultas históricas)
-=======
-## Visão Geral
+### 1. Infraestrutura Core & Perímetro
+*   🌐 **DNS Engine & Zone Routing:** Captura IPv4, IPv6 e roteamento direto.
+*   🛡️ **WAF Bypass & Fingerprinting:** Injeção minuciosa de payloads para identificar firewalls corporativos. Avisa imediatamente se a rota morre no Cloudflare, AWS WAF, Akamai ou Imperva.
+*   ☁️ **Cloud Enum:** Verificação baseada em domínios para achar infraestrutura atrelada: `s3.amazonaws.com`, `storage.googleapis.com`, `blob.core.windows.net` e `nyc3.digitaloceanspaces.com`.
+*   🔌 **Hyper Port Scanner:** Um socket timeout async checa 23 portas letais no lado do servidor: (21, 22, 23, 25, 53, 80, 110, 135, 139, 143, 443, 445, 1433, 1521, 3306, 3389, 5432, 5900, 6379, 8080, 8443, 9200, 27017).
 
-**CyberGhost-OSINT** é uma plataforma de Inteligência de Ameaças em estágio de evolução para arquitetura corporativa (Enterprise). O sistema centraliza fluxos de coleta OSINT assíncrona (via Celery), armazenando artefatos cibernéticos transacionalmente no PostgreSQL e correlacionando indicadores de ataque (IOCs) nativamente em um grafo no Neo4j.
+### 2. Deep OSINT & Footprinting Furtivo
+*   💥 **Subdomain Takeover Scanner:** Captura subdomínios via *Certificate Transparency* (`crt.sh`) e depois resolve seus ponteiros CNAME. Se um S3 Bucket ou Github Pages estiver apontando pro nada, emite um **Alerta Crítico** de Sequestro de Subdomínio.
+*   🚀 **High-Speed Stealth Dirbusting:** Fuzzing assíncrono para diretórios que sempre sobram nas implantações (`/admin`, `/login`, `/api`, `/.env`, `/backup.zip`, `/config.php`, `/wp-admin`).
+*   🕷️ **Deep JS Spidering & Secrets Harvester:** Abre o HTML do index, varre todas as tags `<script src="X">`, baixa todos os códigos Javascript do frontend do alvo e aplica Regex pesado procurando Tokens da AWS, Chaves do Google API, Tokens do Stripe e JWT vazados!
+*   📜 **Wayback Machine Harvester:** Mapeamento do passado do domínio capturando dezenas de URLs arquivadas ao longo dos anos usando a Wayback API.
 
-O projeto deixou para trás sua origem como um script monolítico em bash (agora contido em `_legacy_deprecated/`) e adota uma arquitetura em microsserviços usando FastAPI e Next.js.
+### 3. Threat Intel Passivo (Sem tocar no alvo)
+*   📧 **Domain Email Harvester:** Extração direta via regex de contatos corporativos expostos (para spear-phishing passivo).
+*   ⚠️ **IP Reputation & DNSBL:** Mapeia o IP reverso e joga nas listas de spam: `zen.spamhaus.org`, `b.barracudacentral.org`, `bl.spamcop.net`. Acusa na hora se o servidor virou zumbi de botnet.
+*   🕵️ **OSINT Dork Generator (Breach Intel):** Gera strings automáticas (ex: `site:pastebin.com "alvo.com"`) prontas para analistas SOC colarem no Google caçando senhas em Plaintext e vazamentos em fóruns.
+*   🧿 **Shodan Native Integration:** Ao identificar a variável de sistema `$env:SHODAN_API_KEY`, ele fará uma requisição oficial para a base global do Shodan puxando CVEs (Common Vulnerabilities and Exposures) conhecidos sem tocar no roteador alvo.
+
+### 4. Postura de Segurança (Defense Evasion Analytics)
+*   🛡️ **DNS Security Posture & Spoofing:** Varre o TXT DNS. Se faltar `SPF` (`v=spf1`) ou `DMARC`, o sistema alerta que o domínio é suscetível a forja de emails da diretoria.
+*   🚨 **Security Headers Analyzer:** Lê as respostas HTTP originais em busca de lacunas defensivas (Falta de `Strict-Transport-Security`, `Content-Security-Policy` e `X-Frame-Options`), validando vulnerabilidades contra Clickjacking.
+*   💻 **Tech Detect & CVE Mapper:** Lê Headers customizados (X-Powered-By). Se detectar Apache desatualizado ou versões inseguras (ex: `PHP/5`), emite um alerta deduzindo a vulnerabilidade imediatamente na interface.
+*   🤖 **Robots.txt & Sitemap Mapper:** Ao invés de forçar diretórios massivamente, lê silenciosamente caminhos que o administrador "escondeu" do Google no `robots.txt` (`Disallow:`).
 
 ---
 
-## Principais Recursos
+## 🎛️ CLI: Manual Oficial de Flags e Argumentos
 
-### ✅ Recursos Implementados (Produção)
-*   **Autenticação Segura:** Autenticação via JWT (`/api/v1/auth/login`) e RBAC rudimentar.
-*   **Orquestração Assíncrona:** Fila Celery / Redis para tarefas longas (`backend/api/v1/scans.py` e `workers/tasks/`).
-*   **Suporte Nativo STIX 2.1:** Criação e armazenamento de Indicadores e Relacionamentos no formato STIX via `backend/api/v1/stix.py`.
-*   **Servidor TAXII 2.1:** Endpoints de Discovery e Coleção de Inteligência ativos (`/api/v1/taxii/`).
-*   **Dashboard SPA:** Frontend Next.js com páginas de Login e Dashboard (`frontend/src/app/`).
-*   **Observabilidade Básica:** Instrumentação do FastAPI via OpenTelemetry e Prometheus (`backend/main.py`).
-
-### ⚠️ Recursos Experimentais (Beta)
-*   **Deploy Kubernetes:** Arquivos YAML presentes (`kubernetes/hpa.yaml`, `ingress.yaml`), mas ainda carecem de Helm Charts finalizados e integração madura com KEDA.
-*   **Knowledge Graph Sync:** As tarefas do Celery (`sync_tasks.py`) inserem nós no Neo4j, mas os endpoints de leitura gráfica rica para o Frontend ainda estão em desenvolvimento.
-
-### 🚀 Roadmap Futuro
-*   **Integração MISP:** Bidirecionalidade com instâncias MISP (Push/Pull).
-*   **Graph Data Science (GDS):** Algoritmos nativos Neo4j (PageRank, Louvain) para detecção de Botnets.
-*   **LangGraph Multi-Agent AI:** Orquestração de agentes LLM (`ReconAgent`, `IntelAgent`) para autonomia investigativa e geração de relatórios.
-*   **HashiCorp Vault:** Migração do uso atual de `.env` para gestão de segredos dinâmica.
-
----
-
-## Arquitetura
-
-O fluxo atual reflete o estado do repositório:
-
-```mermaid
-graph TD
-    A[Analista SOC] -->|HTTPS| B(Frontend Next.js)
-    B -->|REST / JWT| C{FastAPI Backend}
-    C -->|Leitura/Escrita| D[(PostgreSQL)]
-    C -->|STIX 2.1 / TAXII| E(External Consumers)
-    C -->|Enfileira Scan| F[Redis Broker]
-    F -->|Consome| G[Celery Workers]
-    G -->|Puxa OSINT| H(Recon / Go Wrappers)
-    G -->|Sincroniza| I[(Neo4j Graph)]
-```
-
----
-
-## Estrutura do Projeto
+O script `cyberghost.py` aceita uma ampla gama de parâmetros:
 
 ```text
-cyberghost-osint/
-├── alembic/            # Migrações do banco (ex: 002_stix_support.py)
-├── backend/            # API FastAPI (Auth, Scans, STIX, TAXII, Models, Schemas)
-├── docker/             # Configurações Docker Compose (Neo4j, Redis, Prometheus)
-├── frontend/           # Aplicação Next.js 15 com TailwindCSS
-├── kubernetes/         # Arquivos Kubernetes (Deployment, Secrets, HPA)
-├── recon/              # Scripts de OSINT (ASN Intel, Cert Transparency)
-├── tests/              # Testes unitários (Auth, Config, STIX, TAXII)
-├── workers/            # Trabalhadores Celery assíncronos
-└── _legacy_deprecated/ # Antigo monolito Cyberghost v1 em Bash
->>>>>>> 182240c732e82daa3643f95822317be19e09b33e
+Uso: python cyberghost.py [alvo] [opções]
+
+Argumentos Posicionais:
+  target                O domínio ou IP alvo a ser dissecado (ex: google.com)
+
+Opções de Perfis de Profundidade:
+  --profile {quick, standard, full, mostruoso, godmode}
+    quick:       Apenas DNS e tecnologias. (Segundos)
+    standard:    Adiciona Scanners de Porta e Enum de Nuvem.
+    full:        Adiciona Reputação de IP e Coleta ASN.
+    mostruoso:   Adiciona Regex de Segredos no JS e Scan de Misconfigurations.
+    godmode:     O arsenal v14 massivo e passivo completo. (Padrão)
+
+Opções de Saída e Ferramentas:
+  --export-html         No fim da execução, salva os dados estruturados em um arquivo HTML atraente.
+  --plugin NOME         Procura por `plugin_NOME.py` em `~/.cyberghost/plugins/` e anexa ao scan.
+
+Opções Visuais e Temas (powered by Rich):
+  --logo {matrix, cyber, red, rainbow, minimal, none, dark, blood, ghost, premium, premium-dark}
+    Define o tema da arte ASCII e cores da interface. (O padrão é "matrix").
+  --animate             Renderiza a logo sendo desenhada letre por letra no terminal!
+  --glow                Aplica uma sombra profunda em texto premium. (Use com logos premium/dark).
+  --blood-drip          (Apenas modo dark/blood) Pingos de sangue caem do terminal durante a invocação.
+```
+
+### Exemplos de Uso Extremo:
+
+**O Hacker Moderno (Premium UI com Exportação):**
+```bash
+python cyberghost.py uol.com.br --profile godmode --export-html --logo premium --glow --animate
+```
+
+**Modo Furtivo Total (Sem UI visual, limpo e direto):**
+```bash
+python cyberghost.py example.com --profile godmode --logo minimal
+```
+
+**Sessão da Madrugada (Terror Dark com efeito de sangue):**
+```bash
+python cyberghost.py fbi.gov --profile godmode --logo blood --blood-drip --animate
 ```
 
 ---
 
-<<<<<<< HEAD
-## 💻 Instalação & Setup
+## 💻 Instalação & Setup (Ambiente Local - CLI)
 
-### Opção 1: Infraestrutura Corporativa Completa (Docker Compose) - Recomendado
+**Pré-requisitos:** Python 3.10 ou superior no Windows/Linux/macOS.
 
-A forma mais rápida de subir todo o ecossistema (PostgreSQL, Neo4j, Redis, Backend, Frontend e Workers).
+1.  **Clone e acesse:**
+    ```bash
+    git clone https://github.com/Leobatman/Cyberghost-OSINT.git
+    cd Cyberghost-OSINT
+    ```
+2.  **Instale os pacotes poderosos:**
+    ```bash
+    pip install aiohttp rich beautifulsoup4 colorama requests shodan censys dnspython ipwhois
+    ```
+    *(Nota de arquitetura: O código força o loop de eventos para `WindowsSelectorEventLoopPolicy` no Windows, garantindo que não ocorra um crash do asyncio).*
 
-```bash
-# 1. Clonar o repositório
-git clone https://github.com/Leobatman/Cyberghost-OSINT.git
-cd Cyberghost-OSINT
-
-# 2. Configuração de Variáveis (Ajuste o `.env` conforme necessário)
-cp .env.example .env
-
-# 3. Subir e Orquestrar
-=======
-## Tecnologias Utilizadas
-
-| Componente | Tecnologia Atual | Status no Código |
-| :--- | :--- | :--- |
-| **Linguagem Core** | Python 3.11 | `backend/`, `workers/`, `tests/` |
-| **Framework Web** | FastAPI | `backend/main.py` |
-| **Mensageria** | Redis & Celery | `workers/celery_app.py` |
-| **Banco Relacional** | PostgreSQL (Asyncpg) | `alembic/`, SQLAlchemy Models |
-| **Banco de Grafos** | Neo4j | Conectores instanciados |
-| **Frontend** | Next.js 15 (React) | `frontend/src/` |
-| **Infraestrutura** | Docker Compose / K8s yaml | `docker-compose.enterprise.yml`, `kubernetes/` |
+3.  **Habilite a API Shodan (Altamente Recomendado):**
+    Para receber alertas massivos de CVE de IPs.
+    ```powershell
+    # Windows
+    $env:SHODAN_API_KEY="SUA_CHAVE_SHODAN"
+    
+    # Linux/MacOS
+    export SHODAN_API_KEY="SUA_CHAVE_SHODAN"
+    ```
 
 ---
 
-## Instalação Completa
+## 🔌 Sistema Mestre de Plugins (Write-your-own)
 
-### Docker Compose (Recomendado)
+Não quer mexer no coração do `cyberghost.py`? O sistema da V14 aceita a injeção assíncrona de plugins na pasta oculta do usuário (o sistema cria essa pasta automaticamente no primeiro uso).
 
-O repositório já possui a orquestração `enterprise` preparada.
+**Local do Arquivo:** No Windows `C:\Users\SEU_USUARIO\.cyberghost\plugins\plugin_custom.py` (Linux: `~/.cyberghost/plugins/plugin_custom.py`).
 
+**Como criar um plugin:**
+Basta criar o arquivo `plugin_meuteste.py` com uma função global `run(target)` assíncrona.
+```python
+# plugin_meuteste.py
+async def run(target):
+    return f"Plugin secreto executado com sucesso no alvo: {target}!"
+```
+
+Rode passando `--plugin meuteste` e a interface criará uma nova caixa renderizada com seus dados!
+
+---
+
+## 🏗️ O MODO ENTERPRISE (Operações de SOC e Threat Hunting Contínuo)
+
+Além do front end letal no CLI, o diretório `/backend` (Arquitetura reservada no repositório) gerencia um monolito de CTI projetado para processar milhares de domínios.
+
+### Componentes de Rede:
+*   **API Gateway (FastAPI):** Lida com os logins JWT das equipes do Red Team e recebe requisições JSON.
+*   **Job Broker (RabbitMQ / Redis):** Mantém a fila de trabalhos de OSINT não-bloqueantes.
+*   **Celery Workers:** Recebem os jobs da fila e engatilham os mesmos processos do `cyberghost.py` de forma paralela no Data Center.
+*   **Knowledge Graph (Neo4j):** Salva relatórios vinculando "Domínio A -> Resolve para -> IP B -> Hospedado em -> AWS". Perfeito para caçar APTs e campanhas contínuas de phishing.
+
+### Implantando Enterprise (Docker Compose):
+Copie o ambiente:
 ```bash
-# 1. Clonar
-git clone https://github.com/Leobatman/Cyberghost-OSINT.git
-cd Cyberghost-OSINT
-
-# 2. Configurar variáveis (Crie o arquivo com as credenciais abaixo)
 cp .env.example .env
-
-# 3. Subir infraestrutura (Redis, Postgres, Neo4j, Backend)
->>>>>>> 182240c732e82daa3643f95822317be19e09b33e
+```
+Lance o cluster:
+```bash
 docker compose -f docker/docker-compose.enterprise.yml up -d --build
 ```
-> Após o processo, a API estará acessível via `http://localhost:8000`, e o frontend em `http://localhost:3000`.
-
-<<<<<<< HEAD
-### Opção 2: Ambiente de Desenvolvimento Local (Linux/WSL)
-
-Ideal para engenheiros testando partes separadas ou desenvolvendo novas ferramentas de Recon.
-=======
-### Ambiente de Desenvolvimento Local (Kali Linux / Ubuntu)
->>>>>>> 182240c732e82daa3643f95822317be19e09b33e
-
-**A. Subindo o Backend & Worker**
-```bash
-<<<<<<< HEAD
-# Criar Ambiente Virtual e instalar dependências
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
-
-# Aplicar Migrations (Necessário PostgreSQL rodando)
-alembic upgrade head
-
-# Iniciar Servidor da API FastAPI
-uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
-
-# Em outro terminal, iniciar o Celery Worker
-celery -A workers.celery_app worker --loglevel=info
-```
-
-**B. Subindo o Frontend**
-```bash
-cd frontend
-npm install
-npm run dev
-```
+> O Dashboard (Next.js) subirá na porta **3000** e o core API subirá na porta **8000**.
 
 ---
 
-## 🛠️ Configuração Básica (`.env`)
+## 🗺️ Roadmap de Evolução (V15+)
 
-As configurações da aplicação são orquestradas via `backend/core/config.py`. As chaves críticas no `.env` incluem:
-
-* `DATABASE_URL`: String de conexão (ex: `postgresql+asyncpg://user:pass@localhost:5432/cyberghost`).
-* `NEO4J_URI` / `NEO4J_USER` / `NEO4J_PASSWORD`: Chaves de acesso do banco de grafos Neo4j.
-* `REDIS_URL`: Broker de mensagens (`redis://localhost:6379/0`).
-* `SECRET_KEY`: String robusta para assinatura JWT (gere uma com `openssl rand -hex 32`).
+*   [ ] Integração completa e automatizada nativa com LLM local (Ollama) para a IA do Cyberghost processar as falhas descobertas e descrever relatórios detalhados de invasão e mitigação.
+*   [ ] Crawler passivo massivo do LinkedIn para pegar perfis exatos da empresa.
+*   [ ] Suporte de execução massiva no CLI lendo de um arquivo `.txt` (Scan de 1000 hosts por vez).
 
 ---
 
-## 💡 Como Utilizar (Exemplos de API)
+## 🤝 Contribuições
 
-### 1. Autenticação (Login)
-```bash
-curl -X POST "http://localhost:8000/api/v1/auth/login" \
-     -H "Content-Type: application/x-www-form-urlencoded" \
-     -d "username=admin&password=your_secure_password"
-```
-
-### 2. Disparar uma Coleta OSINT
-*(Nota: As tarefas requerem Autenticação Bearer gerada no passo 1)*
-```bash
-curl -X POST "http://localhost:8000/api/v1/scans/start" \
-     -H "Authorization: Bearer <SEU_TOKEN_JWT>" \
-     -H "Content-Type: application/json" \
-     -d '{
-           "target": "example.com",
-           "scan_type": "full_recon"
-         }'
-```
-
-### 3. Integração com Ecossistema CTI (Criar Indicador STIX 2.1)
-```bash
-curl -X POST "http://localhost:8000/api/v1/stix/indicators" \
-     -H "Content-Type: application/json" \
-     -d '{
-           "name": "C2 Server Detectado",
-           "pattern": "[ipv4-addr:value = '\''198.51.100.4/32'\'']",
-           "pattern_type": "stix",
-           "valid_from": "2024-01-01T00:00:00Z"
-         }'
-```
+Contribuições são sempre bem-vindas e esperadas da comunidade Hacker. Sinta-se livre para clonar, realizar um fork, melhorar os módulos assíncronos no core do código ou lançar novos visuais para o Rich Console. Use `ruff` para linting!
 
 ---
 
-## 🛡️ Defesas e Segurança Nativas
+## 📜 Licença e Termos Legais (Disclaimer)
 
-* **Rate Limiting Distribuído:** Camada de middleware em FastAPI suportada por Redis limitando abuso por IP.
-* **Autenticação e Sessão:** Transações restritas via Tokens JWT robustos; RBAC em consolidação.
-* **Proteção Cibernética no Código:** Cypher Injections validados em Neo4j, e Modelos Estritos via `Pydantic` que impedem mass assignment ou payload parsing abusivo.
-* **Sanitização de Headers Web:** HSTS, XSS Protection, e prevenção de Host-Header Injections ativados por default via `TrustedHostMiddleware`.
+O projeto encontra-se inteiramente sob a licença **MIT**. Veja o arquivo [LICENSE](LICENSE) para mais detalhes de distribuição e modificação.
 
----
-
-## 📊 Observabilidade e Métricas
-
-Totalmente instrumentada para a suíte *Cloud Native*.
-* O endpoint `/metrics` serve um formato amigável para **Prometheus** extraído pelas bibliotecas do FastAPI e OpenTelemetry.
-* **Health Checks Dinâmicos:** `/api/health` para visualização profunda do estado de conexões (ex: DB Status) e `/api/ready` exclusivo para orquestrações Kubernetes (Probes).
-
----
-
-## 🧪 CI/CD e Garantia de Qualidade
-
-Este projeto emprega um modelo rigoroso DevSecOps com testes unificados no GitHub Actions (`.github/workflows/ci.yml`).
-
-* **Execução dos Testes Locais:**
-  ```bash
-  # Testes isolados de banco relacional e lógicas
-  pytest tests/unit/
-  
-  # Cobertura abrangente nas lógicas CTI (Auth, TAXII, STIX)
-  ```
-* **Linting / Security / Type Checking:** 
-  Validação estrita rodando via `Ruff`, verificação estática de tipos no `MyPy` e auditoria de SAST via ferramentas como `Bandit` e `Semgrep`.
-
----
-
-## 🤝 Contribuições e Políticas
-
-Contribuições para o projeto são amplamente encorajadas! O repositório segue regras rigorosas, portanto:
-
-1. Dê um **Fork** no projeto e crie sua Branch: `git checkout -b feature/SuaInovacao`
-2. Escreva o código (Assegure testes para novos recursos, preferencialmente `TDD`).
-3. Formate e inspecione os Padrões:
-   ```bash
-   ruff check . --fix
-   pytest
-   ```
-4. Submeta seu **Pull Request** descrevendo os benefícios da sua alteração.
-5. Siga o nosso [Código de Conduta](CODE_OF_CONDUCT.md) e [Políticas de Contribuição](CONTRIBUTING.md).
-
----
-
-## 📜 Licença e Termos Legais
-
-O código é distribuído sob a Licença **MIT** - você tem liberdade para usar, alterar e distribuir sob o seu próprio risco. Veja o arquivo [LICENSE](LICENSE) para maiores detalhes jurídicos.
-
-> ⚠️ **Aviso de Responsabilidade:** Esta plataforma e suas ferramentas de Reconhecimento foram criadas estritamente para **Inteligência de Ameaças, Pesquisa Acadêmica e Avaliações de Defesa**. O uso malicioso para ataques contra infraestruturas não autorizadas é estritamente proibido. Os desenvolvedores e mantenedores não se responsabilizam por danos resultantes da manipulação indevida ou irresponsável deste software.
-=======
-# Backend
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-alembic upgrade head
-uvicorn backend.main:app --reload
-
-# Frontend
-cd frontend
-npm install
-npm run dev
-```
-
----
-
-## Configuração (`.env`)
-
-Principais variáveis utilizadas nativamente pelo `backend/core/config.py`:
-
-*   `DATABASE_URL`: URI de conexão com o PostgreSQL (ex: `postgresql+asyncpg://user:pass@localhost:5432/cyberghost`)
-*   `NEO4J_URI` / `NEO4J_USER` / `NEO4J_PASSWORD`: Credenciais para o banco em Grafos.
-*   `REDIS_URL`: Conexão do Celery e Rate Limiting (`redis://localhost:6379/0`).
-
----
-
-## Como Utilizar (Exemplos Reais baseados no Código)
-
-As chamadas abaixo refletem os *endpoints* de fato codificados na aplicação (ver `backend/api/v1/`).
-
-### Login
-```bash
-curl -X POST "http://localhost:8000/api/v1/auth/login" \
-     -H "Content-Type: application/x-www-form-urlencoded" \
-     -d "username=admin&password=admin_password"
-```
-
-### Criação de Indicador STIX 2.1 Nativo
-```bash
-curl -X POST "http://localhost:8000/api/v1/stix/indicators" \
-     -H "Content-Type: application/json" \
-     -d '{
-           "name": "Malicious IP",
-           "pattern": "[ipv4-addr:value = '\''198.51.100.1/32'\'']",
-           "pattern_type": "stix"
-         }'
-```
-
-### Consultar Discovery do Servidor TAXII
-```bash
-curl -X GET "http://localhost:8000/api/v1/taxii/taxii2/" \
-     -H "Accept: application/taxii+json;version=2.1"
-```
-
----
-
-## Fluxo Operacional
-
-1.  O **Frontend Next.js** chama `/api/v1/auth/login` e armazena o token.
-2.  O usuário submete um domínio; o FastAPI delega a tarefa para a fila do Redis (`Celery`).
-3.  O `Celery Worker` retira a tarefa e executa os módulos em `/recon` (Go wrappers / scripts Python).
-4.  O resultado é tratado, salvo no PostgreSQL (transacionalmente) e um nó é inserido no Neo4j para correlação visual.
-
----
-
-## Segurança
-
-O repositório possui mecanismos defensivos fundamentais estabelecidos:
-*   **JWT & Rate Limiting:** Middlewares nativos no FastAPI para evitar ataques de força bruta.
-*   **Validação Estrita:** Pydantic models em todas as rotas de entrada (`backend/schemas/`).
-*   **Cypher Injection Protected:** As instâncias de interação com Neo4j passaram por sanitização.
-
-*(Obs: A adoção de HashiCorp Vault e isolamento gVisor para processos OSINT estão no Roadmap).*
-
----
-
-## Observabilidade
-
-*   **Prometheus / OpenTelemetry:** O arquivo `backend/main.py` contém as instrumentações `FastAPIInstrumentor` e `prometheus_fastapi_instrumentator`, expondo o endpoint `/metrics` nativamente.
-
----
-
-## Testes e CI/CD
-
-O repositório possui uma robusta esteira de testes locais (Pytest) e Actions GitHub (Pipeline DevSecOps).
-
-**Rodando Testes Localmente:**
-```bash
-# Testes unitários com SQLite em memória
-pytest tests/unit/
-
-# Inclui validações essenciais de:
-# - test_stix.py (Rotas STIX 2.1)
-# - test_taxii.py (Servidor TAXII)
-# - test_auth.py (JWT)
-```
-
-**CI/CD (GitHub Actions):** O arquivo `.github/workflows/ci.yml` contém etapas ativas para:
-*   Linting (Ruff) e Type Checking (MyPy)
-*   SAST (Bandit e Semgrep)
-*   Testes Unitários (Pytest)
-
----
-
-## Limitações Atuais (Transparência)
-
-Para uma implementação de nível "Fortune 500", este projeto ainda **não possui**:
-*   A integração com Agentes LangGraph (IA Autônoma) ainda não foi codificada no repositório.
-*   O Frontend (Next.js) possui apenas páginas estruturais (Login/Dashboard); o React Force Graph dinâmico para leitura visual do Neo4j não está conectado à API.
-*   Scanners complexos (Dark Web, Telegram, RaaS Leak sites) estão ausentes no framework atual.
-*   A infraestrutura Kubernetes local em `kubernetes/` carece de Helm Charts definitivos; os arquivos YAML presentes são estáticos.
-
----
-
-## Contribuição
-
-Sinta-se à vontade para enviar PRs (Pull Requests)!
-1. Crie uma branch baseada na `main` (`feature/sua-feature`).
-2. Garanta que o código passa no `ruff check .` e no `pytest`.
-3. Abra o PR descrevendo o problema resolvido.
-
----
-
-## Licença
-
-Este projeto é distribuído sob a Licença **MIT**. Veja o arquivo `LICENSE` para mais detalhes.
->>>>>>> 182240c732e82daa3643f95822317be19e09b33e
+> ⚠️ **Aviso de Responsabilidade Extrema:** A V14 "Ultimate God Mode" do CyberGhost-OSINT foi construída **apenas** e **estritamente** para uso por profissionais de Inteligência de Ameaças, Pesquisadores Acadêmicos, Analistas SOC, Bug Hunters e equipes de Defesa e Red Teaming operando debaixo de autorização. Embora os pacotes da V14 sejam baseados em OSINT passivo e não destrutivo, o mapeamento acelerado de vulnerabilidades pode ser classificado como varredura maliciosa por provedores de nuvem (AWS/GCP/Cloudflare). O autor e os contribuidores **negam qualquer responsabilidade** pelo uso dessa ferramenta para extração de dados sensíveis ou varredura de infraestruturas de terceiros sem permissão prévia por escrito com o intuito de aplicar danos. Você é a única pessoa responsável por suas ações na rede cibernética. Use com sabedoria e responsabilidade.
