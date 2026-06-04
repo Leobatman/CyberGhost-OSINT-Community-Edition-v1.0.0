@@ -1,7 +1,8 @@
 <div align="center">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Ghost_icon.svg/1200px-Ghost_icon.svg.png" width="100" alt="Ghost Logo" style="filter: drop-shadow(0 0 10px #ff0000);">
-  <h1>💀 CyberGhost-OSINT v14.0 💀<br><em>"ULTIMATE GOD MODE" EDITION</em></h1>
+    <h1>💀 CyberGhost-OSINT v14.0 💀<br><em>"ULTIMATE GOD MODE" EDITION</em></h1>
   <p><strong>A Plataforma Híbrida Definitiva de Cyber Threat Intelligence (CTI) e Automação OSINT Passiva</strong></p>
+
+  <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExODYwbW52OWphdXI2c3J0MDR1OWJjc3pjMmFvN2V2YjdkemZvZHp5cCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/C4NdKtRaQE9m8/giphy.gif" width="10000" alt="Ghost Logo" style="filter: drop-shadow(0 0 1000px #ff0000);">
 
   [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
   [![Aiohttp](https://img.shields.io/badge/Aiohttp-Async_Engine-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://docs.aiohttp.org/)
