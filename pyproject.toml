@@ -1,0 +1,147 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cyberghost-osint"
+version = "8.0.0"
+description = "CyberGhost OSINT Enterprise Platform"
+readme = "README.md"
+license = { text = "GPL-3.0" }
+requires-python = ">=3.11"
+authors = [
+    { name = "Leonardo Pereira Pinheiro", email = "cyberghost@protonmail.com" }
+]
+
+dependencies = [
+    # Core Web Framework
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "python-multipart>=0.0.9",
+
+    # Async HTTP
+    "aiohttp>=3.11.0",
+    "httpx>=0.28.0",
+
+    # Auth & Security
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    "python-dotenv>=1.0.1",
+    "pydantic-settings>=2.6.0",
+    "pydantic[email]>=2.10.0",
+    "cryptography>=43.0.0",
+
+    # Database
+    "sqlalchemy[asyncio]>=2.0.36",
+    "alembic>=1.14.0",
+    "asyncpg>=0.30.0",
+    "psycopg2-binary>=2.9.10",
+
+    # Cache & Queue
+    "redis>=5.2.0",
+    "celery[redis]>=5.4.0",
+    "kombu>=5.4.0",
+
+    # OSINT Libraries
+    "shodan>=1.31.0",
+    "censys>=2.2.0",
+    "vt-py>=0.18.0",
+    "dnspython>=2.7.0",
+    "ipwhois>=1.3.0",
+
+    # Threat Intelligence
+    "stix2>=3.0.1",
+    "taxii2-client>=2.3.0",
+    "misp-modules>=2.4.0",
+    "pyattck>=7.2.0",
+
+    # Knowledge Graph
+    "neo4j>=5.26.0",
+    "py2neo>=2021.2.4",
+
+    # Search & Analytics
+    "elasticsearch[async]>=8.16.0",
+
+    # AI/ML
+    "langchain>=0.3.0",
+    "langchain-community>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "langchain-anthropic>=0.3.0",
+    "langgraph>=0.2.0",
+    "qdrant-client>=1.12.0",
+    "ollama>=0.4.0",
+    "transformers>=4.47.0",
+    "sentence-transformers>=3.3.0",
+
+    # Parsing & Data
+    "beautifulsoup4>=4.12.0",
+    "lxml>=5.3.0",
+    "pandas>=2.2.0",
+    "pyyaml>=6.0.2",
+    "orjson>=3.10.0",
+
+    # Observability
+    "opentelemetry-api>=1.29.0",
+    "opentelemetry-sdk>=1.29.0",
+    "opentelemetry-instrumentation-fastapi>=0.50b0",
+    "opentelemetry-instrumentation-sqlalchemy>=0.50b0",
+    "opentelemetry-exporter-otlp>=1.29.0",
+    "prometheus-fastapi-instrumentator>=7.0.0",
+    "prometheus-client>=0.21.0",
+    "structlog>=24.4.0",
+
+    # Utilities
+    "click>=8.1.8",
+    "rich>=13.9.0",
+    "tqdm>=4.67.0",
+    "geopy>=2.4.1",
+    "phonenumbers>=8.13.0",
+    "exifread>=3.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "httpx>=0.28.0",
+    "factory-boy>=3.3.0",
+    "faker>=33.0.0",
+    "respx>=0.21.0",
+    "time-machine>=2.16.0",
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+    "pre-commit>=4.0.0",
+    "bandit>=1.7.10",
+    "safety>=3.2.0",
+    "pip-audit>=2.7.0",
+]
+
+[project.scripts]
+cyberghost = "backend.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["backend", "workers", "ai", "intel", "recon"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = ["E", "F", "I", "N", "W", "B", "S", "A", "C4", "UP", "SIM"]
+ignore = ["S101", "S603"]
+
+[tool.ruff.per-file-ignores]
+"tests/**/*.py" = ["S", "ANN"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "--cov=backend --cov=workers --cov=recon --cov=intel --cov-report=term-missing --cov-fail-under=80"
+
+[tool.coverage.run]
+omit = ["tests/*", "*/migrations/*", "*/__init__.py"]

@@ -1,0 +1,397 @@
+# =============================================================================
+# CyberGhost OSINT Enterprise — Docker Compose (Development)
+# Versão corrigida: secrets via env, ES com segurança, portas Tor internas
+# =============================================================================
+
+version: '3.9'
+
+x-common-labels: &common-labels
+  labels:
+    - "com.cyberghost.project=osint-enterprise"
+    - "com.cyberghost.version=8.0.0"
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "5"
+    tag: "{{.Name}}"
+
+services:
+  # ── API Backend ─────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.enterprise
+    container_name: cyberghost-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"  # API only — no Tor ports exposed
+    volumes:
+      - ../data:/app/data:rw
+      - ../logs:/app/logs:rw
+      - ../reports:/app/reports:rw
+    environment:
+      - APP_ENV=development
+      - DATABASE_URL=postgresql+asyncpg://cyberghost:${DB_PASSWORD}@db:5432/cyberghost
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/1
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - SECRET_KEY=${SECRET_KEY}
+      - LOG_LEVEL=INFO
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otelcol:4317
+    env_file:
+      - ../.env
+    networks:
+      - cyberghost_net
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
+    logging: *default-logging
+    <<: *common-labels
+
+  # ── Celery Worker (Recon) ─────────────────────────────────────────────────
+  worker-recon:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.worker
+    container_name: cyberghost-worker-recon
+    restart: unless-stopped
+    command: celery -A workers.celery_app worker --queues=recon --concurrency=4 --loglevel=info
+    volumes:
+      - ../data:/app/data:rw
+      - ../logs:/app/logs:rw
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://cyberghost:${DB_PASSWORD}@db:5432/cyberghost
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/2
+    env_file:
+      - ../.env
+    networks:
+      - cyberghost_net
+    depends_on:
+      - redis
+      - db
+    deploy:
+      replicas: 2
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+    <<: *common-labels
+
+  # ── Celery Worker (Intel) ─────────────────────────────────────────────────
+  worker-intel:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.worker
+    container_name: cyberghost-worker-intel
+    restart: unless-stopped
+    command: celery -A workers.celery_app worker --queues=intel --concurrency=8 --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://cyberghost:${DB_PASSWORD}@db:5432/cyberghost
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/2
+    env_file:
+      - ../.env
+    networks:
+      - cyberghost_net
+    depends_on:
+      - redis
+      - db
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+
+  # ── Celery Beat (Scheduler) ──────────────────────────────────────────────
+  worker-beat:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.worker
+    container_name: cyberghost-beat
+    restart: unless-stopped
+    command: celery -A workers.celery_app beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://cyberghost:${DB_PASSWORD}@db:5432/cyberghost
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/1
+    env_file:
+      - ../.env
+    networks:
+      - cyberghost_net
+    depends_on:
+      - redis
+      - db
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+
+  # ── PostgreSQL ────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: cyberghost-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=cyberghost
+      - POSTGRES_USER=cyberghost
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - cyberghost_postgres:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    # DB NOT exposed to host — internal network only
+    networks:
+      - cyberghost_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cyberghost -d cyberghost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+    <<: *common-labels
+
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: cyberghost-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --protected-mode yes
+    volumes:
+      - cyberghost_redis:/data
+    # Redis NOT exposed to host
+    networks:
+      - cyberghost_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+    <<: *common-labels
+
+  # ── Elasticsearch (WITH security enabled) ─────────────────────────────────
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.16.0
+    container_name: cyberghost-elasticsearch
+    restart: unless-stopped
+    environment:
+      - node.name=cyberghost-es01
+      - cluster.name=cyberghost-cluster
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - xpack.security.enabled=true          # ← ENABLED (was false in audit)
+      - xpack.security.http.ssl.enabled=false # Internal TLS optional in dev
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - cyberghost_elasticsearch:/usr/share/elasticsearch/data
+    # ES NOT exposed to host in production
+    networks:
+      - cyberghost_net
+    healthcheck:
+      test: >
+        curl -s -u "elastic:${ELASTIC_PASSWORD}"
+        http://localhost:9200/_cluster/health | grep -q '"status":"green"\|"status":"yellow"'
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    logging: *default-logging
+    <<: *common-labels
+
+  # ── Neo4j (Knowledge Graph) ────────────────────────────────────────────────
+  neo4j:
+    image: neo4j:5.26-community
+    container_name: cyberghost-neo4j
+    restart: unless-stopped
+    environment:
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD}
+      - NEO4J_PLUGINS=["apoc", "graph-data-science"]
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*,gds.*
+      - NEO4J_dbms_memory_heap_initial__size=512m
+      - NEO4J_dbms_memory_heap_max__size=1G
+    volumes:
+      - cyberghost_neo4j:/data
+      - cyberghost_neo4j_plugins:/plugins
+    # UI port for dev only — remove in production
+    ports:
+      - "127.0.0.1:7474:7474"  # Neo4j Browser (localhost only)
+      # 7687 NOT exposed — internal only
+    networks:
+      - cyberghost_net
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:7474/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    logging: *default-logging
+    <<: *common-labels
+
+  # ── Qdrant (Vector DB for AI) ─────────────────────────────────────────────
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    container_name: cyberghost-qdrant
+    restart: unless-stopped
+    environment:
+      - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY}
+    volumes:
+      - cyberghost_qdrant:/qdrant/storage
+    networks:
+      - cyberghost_net
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:6333/readyz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging: *default-logging
+
+  # ── Flower (Celery Monitoring — dev only) ────────────────────────────────
+  flower:
+    image: mher/flower:2.0
+    container_name: cyberghost-flower
+    restart: unless-stopped
+    command: >
+      celery flower
+      --broker=redis://:${REDIS_PASSWORD}@redis:6379/1
+      --basic-auth=${FLOWER_USER}:${FLOWER_PASSWORD}
+      --port=5555
+    ports:
+      - "127.0.0.1:5555:5555"  # Localhost only
+    networks:
+      - cyberghost_net
+    depends_on:
+      - redis
+    logging: *default-logging
+
+  # ── OpenTelemetry Collector ───────────────────────────────────────────────
+  otelcol:
+    image: otel/opentelemetry-collector-contrib:0.114.0
+    container_name: cyberghost-otelcol
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./otel/config.yaml:/etc/otelcol/config.yaml:ro
+    networks:
+      - cyberghost_net
+    logging: *default-logging
+
+  # ── Prometheus ────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v3.0.1
+    container_name: cyberghost-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - cyberghost_prometheus:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"  # Localhost only
+    networks:
+      - cyberghost_net
+    logging: *default-logging
+
+  # ── Grafana ───────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: cyberghost-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SECURITY_DISABLE_GRAVATAR=true
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+    volumes:
+      - cyberghost_grafana:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/:ro
+      - ./grafana/dashboards/:/var/lib/grafana/dashboards/:ro
+    ports:
+      - "127.0.0.1:3001:3000"  # Localhost only
+    networks:
+      - cyberghost_net
+    depends_on:
+      - prometheus
+    logging: *default-logging
+
+  # ── Nginx Reverse Proxy ───────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: cyberghost-nginx
+    restart: unless-stopped
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - ../reports:/usr/share/nginx/html/reports:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - cyberghost_net
+    depends_on:
+      - api
+    logging: *default-logging
+    <<: *common-labels
+
+networks:
+  cyberghost_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24  # Smaller subnet — /16 was excessive
+          gateway: 172.20.0.1
+    driver_opts:
+      com.docker.network.bridge.name: cg-osint
+
+volumes:
+  cyberghost_postgres:
+    driver: local
+  cyberghost_redis:
+    driver: local
+  cyberghost_elasticsearch:
+    driver: local
+  cyberghost_neo4j:
+    driver: local
+  cyberghost_neo4j_plugins:
+    driver: local
+  cyberghost_qdrant:
+    driver: local
+  cyberghost_prometheus:
+    driver: local
+  cyberghost_grafana:
+    driver: local
