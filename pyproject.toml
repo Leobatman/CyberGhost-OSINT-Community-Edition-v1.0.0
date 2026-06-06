@@ -53,7 +53,7 @@ dependencies = [
     "stix2>=3.0.1",
     "taxii2-client>=2.3.0",
     "misp-modules>=2.4.0",
-    "pyattck>=7.2.0",
+    "pyattck>=7.1.2",
 
     # Knowledge Graph
     "neo4j>=5.26.0",
