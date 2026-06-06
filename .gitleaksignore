@@ -1,0 +1,6 @@
+[allowlist]
+description = "Ignore historical dummy secrets"
+commits = [
+    "69ec1be79602a185e66f4949884cdbad7747ca30",
+    "2cae69753ae6481ffd50b76890b53de19a956e65"
+]
