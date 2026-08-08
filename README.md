@@ -20,7 +20,6 @@ You can install CyberGhost OSINT directly from the source:
 ```bash
 git clone https://github.com/Leobatman/CyberGhost-OSINT-Community-Edition-v1.0.0
 cd CyberGhost-OSINT-Community-Edition-v1.0.0
-pip install .
 ```
 
 ## Quick Start
@@ -28,24 +27,24 @@ pip install .
 Run a standard passive investigation against a target domain or IP:
 
 ```bash
-cyberghost example.com
+python3 cyberghost.py example.com
 ```
 
 ### Advanced Usage
 
 Export the results as a beautiful HTML report:
 ```bash
-cyberghost example.com --html
+python3 cyberghost.py example.com --html
 ```
 
 Export the results as a STIX 2.1 bundle for Threat Intelligence platforms:
 ```bash
-cyberghost example.com --stix
+python3 cyberghost.py example.com --stix
 ```
 
 Export as raw JSON for external ingestion:
 ```bash
-cyberghost example.com --json
+python3 cyberghost.py example.com --json
 ```
 
 ## Architecture
