@@ -18,7 +18,7 @@ CyberGhost OSINT is an open-source, fast, and modular OSINT tool built for secur
 You can install CyberGhost OSINT directly from the source:
 
 ```bash
-git clone https://github.com/Leobatman/Scarlet-ghost.git cyberghost-osint
+git clone https://github.com/Leobatman/CyberGhost-OSINT-Community-Edition-v1.0.0
 cd cyberghost-osint
 pip install .
 ```
