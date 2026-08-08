@@ -82,6 +82,18 @@ def display_results(summary: dict):
         console.print(f"\n[bold white]Target:[/bold white] [bold cyan]{summary['target']}[/bold cyan]")
         console.print(f"[bold white]Security Posture Score:[/bold white] [bold {score_color}]{score}/100[/bold {score_color}]\n")
         
+        console.print("[bold white]Module Execution Status:[/bold white]")
+        for finding in summary.get('findings', []):
+            source = finding['source']
+            status = finding['status'].upper()
+            if status == "SUCCESS":
+                console.print(f"  [bold green][+][/bold green] {source.ljust(25)} [bold green]SUCCESS[/bold green]")
+            elif status in ["WARNING", "PARTIAL"]:
+                console.print(f"  [bold yellow][!][/bold yellow] {source.ljust(25)} [bold yellow]{status}[/bold yellow]")
+            else:
+                console.print(f"  [bold red][x][/bold red] {source.ljust(25)} [bold red]FAILED[/bold red]")
+        console.print("")
+        
         for finding in summary.get('findings', []):
             if finding['status'] != 'success' or not finding['data']:
                 continue
@@ -103,6 +115,18 @@ def display_results(summary: dict):
     else:
         print(f"\n  Target: {summary['target']}")
         print(f"  Security Posture Score: {score}/100\n")
+        
+        print(f"  {C}Module Execution Status:{NC}")
+        for finding in summary.get('findings', []):
+            source = finding['source']
+            status = finding['status'].upper()
+            if status == "SUCCESS":
+                print(f"  {G}[+]{NC} {source.ljust(25)} {G}SUCCESS{NC}")
+            elif status in ["WARNING", "PARTIAL"]:
+                print(f"  {Y}[!]{NC} {source.ljust(25)} {Y}{status}{NC}")
+            else:
+                print(f"  {R}[x]{NC} {source.ljust(25)} {R}FAILED{NC}")
+        print("")
         
         for finding in summary.get('findings', []):
             if finding['status'] != 'success' or not finding['data']:

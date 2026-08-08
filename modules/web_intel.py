@@ -1,4 +1,5 @@
 import aiohttp
+import asyncio
 import re
 from typing import List
 from core.models import OsintResult

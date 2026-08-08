@@ -31,6 +31,10 @@ def generate_html_report(target: str, data: Dict[str, Any]) -> str:
         body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0d1117; color: #c9d1d9; margin: 40px; }}
         h1 {{ color: #58a6ff; text-align: center; border-bottom: 2px solid #30363d; padding-bottom: 15px; }}
         h2 {{ color: #79c0ff; margin-top: 30px; }}
+        h3.section-title {{ padding: 10px; background-color: #21262d; border-radius: 5px; text-align: center; margin-top: 40px; }}
+        .success-title {{ color: #3fb950; }}
+        .warning-title {{ color: #d29922; }}
+        .failed-title {{ color: #f85149; }}
         .card {{ background-color: #161b22; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #30363d; }}
         ul {{ list-style-type: none; padding-left: 0; }}
         li {{ padding: 4px 0; }}
@@ -38,6 +42,8 @@ def generate_html_report(target: str, data: Dict[str, Any]) -> str:
         .meta {{ color: #8b949e; font-size: 0.9em; text-align: center; }}
         .score {{ font-size: 1.5em; text-align: center; color: #3fb950; font-weight: bold; margin: 20px 0; }}
         .footer {{ text-align: center; color: #484f58; margin-top: 40px; font-size: 0.8em; }}
+        .error-msg {{ color: #f85149; font-style: italic; }}
+        .warning-msg {{ color: #d29922; font-style: italic; }}
     </style>
 </head>
 <body>
@@ -47,24 +53,45 @@ def generate_html_report(target: str, data: Dict[str, Any]) -> str:
     <div class="score">Security Posture Score: {data.get('security_score', 0)}/100</div>
 """
 
-    for finding in data.get('findings', []):
-        if finding['status'] != 'success' or not finding['data']:
-            continue
-            
-        safe_source = html_module.escape(finding['source'].upper())
-        report += f'<div class="card"><h2>{safe_source}</h2><ul>'
+    success = [f for f in data.get('findings', []) if f.get('status') == 'success' and f.get('data')]
+    warnings = [f for f in data.get('findings', []) if f.get('status') in ['warning', 'partial']]
+    failed = [f for f in data.get('findings', []) if f.get('status') == 'failed']
 
-        if isinstance(finding['data'], dict):
-            for k, v in finding['data'].items():
-                if isinstance(v, list):
-                    report += f"<li><strong>{html_module.escape(str(k))}:</strong></li><ul>"
-                    for item in v:
-                        report += f"<li>{html_module.escape(str(item))}</li>"
-                    report += "</ul>"
-                else:
+    if success:
+        report += '<h3 class="section-title success-title">Successful Modules</h3>'
+        for finding in success:
+            safe_source = html_module.escape(finding['source'].upper())
+            report += f'<div class="card"><h2>{safe_source}</h2><ul>'
+            if isinstance(finding.get('data'), dict):
+                for k, v in finding['data'].items():
+                    if isinstance(v, list):
+                        report += f"<li><strong>{html_module.escape(str(k))}:</strong></li><ul>"
+                        for item in v:
+                            report += f"<li>{html_module.escape(str(item))}</li>"
+                        report += "</ul>"
+                    else:
+                        report += f"<li><strong>{html_module.escape(str(k))}:</strong> {html_module.escape(str(v))}</li>"
+            report += "</ul></div>"
+
+    if warnings:
+        report += '<h3 class="section-title warning-title">Warnings / Partial</h3>'
+        for finding in warnings:
+            safe_source = html_module.escape(finding['source'].upper())
+            errors = ", ".join(finding.get('errors', [])) or "Warning occurred without details"
+            report += f'<div class="card"><h2>{safe_source}</h2><p class="warning-msg">{html_module.escape(errors)}</p>'
+            if finding.get('data') and isinstance(finding['data'], dict):
+                report += "<ul>"
+                for k, v in finding['data'].items():
                     report += f"<li><strong>{html_module.escape(str(k))}:</strong> {html_module.escape(str(v))}</li>"
-        
-        report += "</ul></div>"
+                report += "</ul>"
+            report += "</div>"
+
+    if failed:
+        report += '<h3 class="section-title failed-title">Failed Modules</h3>'
+        for finding in failed:
+            safe_source = html_module.escape(finding['source'].upper())
+            errors = ", ".join(finding.get('errors', [])) or "Module failed to execute"
+            report += f'<div class="card"><h2>{safe_source}</h2><p class="error-msg">{html_module.escape(errors)}</p></div>'
 
     report += """
     <div class="footer">

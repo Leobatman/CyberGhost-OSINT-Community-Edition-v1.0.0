@@ -13,9 +13,9 @@ async def scan_certs(session: aiohttp.ClientSession, target: str) -> OsintResult
             source="crt.sh",
             category="Certificates",
             target=target,
-            status="failed",
+            status="warning",
             data={},
-            errors=["Failed to fetch certificate data or timeout"]
+            errors=["source timeout (crt.sh) or API unavailable"]
         )
         
     if not isinstance(data, list) or not data:
