@@ -36,7 +36,7 @@ def api_status():
     """Status da API"""
     return jsonify({
         'status': 'online',
-        'version': '7.0.0',
+        'version': '8.0.0',
         'timestamp': datetime.datetime.now().isoformat()
     })
 

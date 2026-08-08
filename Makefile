@@ -7,7 +7,7 @@
 
 # Configurações
 SHELL := /bin/bash
-VERSION := 7.0.0
+VERSION := 8.0.0
 PROJECT_NAME := cyberghost-osint
 INSTALL_DIR := $(HOME)/$(PROJECT_NAME)
 BIN_DIR := /usr/local/bin

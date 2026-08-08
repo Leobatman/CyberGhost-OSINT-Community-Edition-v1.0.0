@@ -17,6 +17,7 @@ import structlog
 from aiohttp import ClientTimeout
 
 from backend.core.config import settings
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 log = structlog.get_logger(__name__)
 
@@ -137,6 +138,7 @@ class ThreatIntelligence:
         )
         return results
 
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=2, max=60), retry=retry_if_exception_type(aiohttp.ClientError))
     async def _check_virustotal(
         self, session: aiohttp.ClientSession, target: str, ioc_type: str
     ) -> dict[str, Any]:
@@ -188,6 +190,7 @@ class ThreatIntelligence:
                 "community_score": attrs.get("total_votes", {}).get("malicious", 0),
             }
 
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=2, max=60), retry=retry_if_exception_type(aiohttp.ClientError))
     async def _check_abuseipdb(
         self, session: aiohttp.ClientSession, ip: str
     ) -> dict[str, Any]:
@@ -220,6 +223,7 @@ class ThreatIntelligence:
                 "is_tor": d.get("isTor", False),
             }
 
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=2, max=60), retry=retry_if_exception_type(aiohttp.ClientError))
     async def _check_greynoise(
         self, session: aiohttp.ClientSession, ip: str
     ) -> dict[str, Any]:
@@ -248,6 +252,7 @@ class ThreatIntelligence:
                 "message": data.get("message"),
             }
 
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=2, max=60), retry=retry_if_exception_type(aiohttp.ClientError))
     async def _check_alienvault(
         self, session: aiohttp.ClientSession, target: str, ioc_type: str
     ) -> dict[str, Any]:
@@ -286,6 +291,7 @@ class ThreatIntelligence:
                 "malware_families": data.get("malware_families", []),
             }
 
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=2, max=60), retry=retry_if_exception_type(aiohttp.ClientError))
     async def _check_shodan(
         self, session: aiohttp.ClientSession, ip: str
     ) -> dict[str, Any]:
@@ -321,6 +327,7 @@ class ThreatIntelligence:
                 ],
             }
 
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=2, max=60), retry=retry_if_exception_type(aiohttp.ClientError))
     async def _check_urlhaus(
         self, session: aiohttp.ClientSession, url: str
     ) -> dict[str, Any]:
@@ -346,6 +353,7 @@ class ThreatIntelligence:
                 "blacklists": result.get("blacklists", {}),
             }
 
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=2, max=60), retry=retry_if_exception_type(aiohttp.ClientError))
     async def _check_threatminer(
         self, session: aiohttp.ClientSession, target: str, ioc_type: str
     ) -> dict[str, Any]:
@@ -372,6 +380,7 @@ class ThreatIntelligence:
                 "results": data.get("results", [])[:10],
             }
 
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=2, max=60), retry=retry_if_exception_type(aiohttp.ClientError))
     async def _check_ibm_xforce(
         self, session: aiohttp.ClientSession, target: str, ioc_type: str
     ) -> dict[str, Any]:
@@ -483,3 +492,4 @@ class ThreatIntelligence:
             "confidence": confidence,
             "sources_used": len(scores),
         }
+

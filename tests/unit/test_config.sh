@@ -72,7 +72,7 @@ test_default_config() {
     
     # Testar valores padrão
     assert '[[ -n "$VERSION" ]]' "VERSION is set"
-    assert '[[ "$VERSION" == "7.0.0" ]]' "VERSION is 7.0.0"
+    assert '[[ "$VERSION" == "8.0.0" ]]' "VERSION is 8.0.0"
     assert '[[ -n "$AUTHOR" ]]' "AUTHOR is set"
     assert '[[ "$AUTHOR" == "Leonardo Pereira Pinheiro" ]]' "AUTHOR is correct"
     

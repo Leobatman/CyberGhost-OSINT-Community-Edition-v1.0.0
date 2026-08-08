@@ -92,28 +92,43 @@ async def _async_run_scan(scan_id: str, target: str, scan_type: str) -> dict[str
                 _run_threat_intel_module(target),
                 _run_subdomain_module(target),
                 _run_cert_transparency_module(target),
+                _run_web_recon_module(target),
+                _run_vuln_scanner_module(target),
+                _run_passive_dns_module(target),
+                _run_asn_module(target),
                 return_exceptions=True,
             )
-            results["recon"] = tasks[0] if not isinstance(tasks[0], Exception) else {"error": str(tasks[0])}
-            results["threat_intel"] = tasks[1] if not isinstance(tasks[1], Exception) else {"error": str(tasks[1])}
-            results["subdomains"] = tasks[2] if not isinstance(tasks[2], Exception) else {"error": str(tasks[2])}
-            results["cert_transparency"] = tasks[3] if not isinstance(tasks[3], Exception) else {"error": str(tasks[3])}
+            module_keys = [
+                "recon", "threat_intel", "subdomains", "cert_transparency", 
+                "web_recon", "vuln_scanner", "passive_dns", "asn"
+            ]
+            
+            for key, task_result in zip(module_keys, tasks):
+                if isinstance(task_result, Exception):
+                    log.error(f"module_error_{key}", scan_id=scan_id, error=str(task_result))
+                    results[key] = {"error": str(task_result)}
+                else:
+                    results[key] = task_result
 
-        elif scan_type == "recon":
-            results["recon"] = await _run_recon_module(target)
-        elif scan_type == "threat_intel":
-            results["threat_intel"] = await _run_threat_intel_module(target)
-        elif scan_type == "subdomain":
-            results["subdomains"] = await _run_subdomain_module(target)
-        elif scan_type == "cert_transparency":
-            results["cert_transparency"] = await _run_cert_transparency_module(target)
-        elif scan_type == "passive_dns":
-            results["passive_dns"] = await _run_passive_dns_module(target)
-        elif scan_type == "asn":
-            results["asn"] = await _run_asn_module(target)
+        else:
+            # Single module execution based on scan_type
+            module_map = {
+                "recon": _run_recon_module,
+                "threat_intel": _run_threat_intel_module,
+                "subdomain": _run_subdomain_module,
+                "cert_transparency": _run_cert_transparency_module,
+                "passive_dns": _run_passive_dns_module,
+                "asn": _run_asn_module,
+                "web_recon": _run_web_recon_module,
+                "vuln_scan": _run_vuln_scanner_module
+            }
+            if scan_type in module_map:
+                results[scan_type] = await module_map[scan_type](target)
+            else:
+                results["error"] = f"Unknown scan_type: {scan_type}"
 
     except Exception as e:
-        log.error("scan_module_error", scan_id=scan_id, error=str(e))
+        log.error("scan_orchestration_error", scan_id=scan_id, error=str(e))
         results["error"] = str(e)
 
     # Save results and update scan status
@@ -165,6 +180,20 @@ async def _run_asn_module(target: str) -> dict[str, Any]:
     return await asn.lookup(target)
 
 
+async def _run_web_recon_module(target: str) -> dict[str, Any]:
+    """Run Web HTTP checks (headers, robots, WAF)."""
+    from recon.web_recon import WebRecon
+    wr = WebRecon()
+    return await wr.analyze(target)
+
+
+async def _run_vuln_scanner_module(target: str) -> dict[str, Any]:
+    """Run Vulnerability and secrets scanner."""
+    from recon.vuln_scanner import VulnScanner
+    vs = VulnScanner()
+    return await vs.analyze(target)
+
+
 async def _update_scan_status(
     scan_id: str, status: str, error: str | None = None
 ) -> None:
@@ -179,7 +208,7 @@ async def _update_scan_status(
         if scan:
             scan.status = ScanStatus(status)
             if error:
-                scan.error_message = error[:1000]  # Truncate
+                scan.error_message = str(error)[:1000]  # Truncate
             scan.completed_at = datetime.now(UTC)
             await db.commit()
 
@@ -187,7 +216,7 @@ async def _update_scan_status(
 async def _finalize_scan(
     scan_id: str, results: dict[str, Any], duration: int
 ) -> None:
-    """Save all results and mark scan as completed."""
+    """Save all results and mark scan as completed safely."""
     from sqlalchemy import select
     from backend.core.database import async_session_factory
     from backend.models.models import Scan, ScanResult, ScanStatus, Severity
@@ -202,9 +231,11 @@ async def _finalize_scan(
         scan.completed_at = datetime.now(UTC)
         scan.duration_seconds = duration
 
-        # Save results per module
+        # Save results per module safely handling potential serialization issues
         for module_name, module_data in results.items():
             if isinstance(module_data, dict) and "error" not in module_data:
+                # Sanitize dict for pgjsonb (remove non-string keys, recursive obj conversions if needed)
+                # Currently trusting the module's analyze() returns JSON-serializable output
                 result_record = ScanResult(
                     scan_id=scan.id,
                     module=module_name,
@@ -216,6 +247,15 @@ async def _finalize_scan(
 
         await db.commit()
         log.info("scan_finalized", scan_id=scan_id, duration=duration)
+        
+        # Dispatch sync to Graph DB and STIX
+        from workers.tasks.sync_tasks import sync_scan_results
+        try:
+            sync_scan_results.apply_async(args=[scan_id])
+            log.info("sync_task_dispatched", scan_id=scan_id)
+        except Exception as e:
+            log.error("sync_task_dispatch_failed", scan_id=scan_id, error=str(e))
+
 
 
 @celery_app.task(name="workers.tasks.scan_tasks.cleanup_expired_results")

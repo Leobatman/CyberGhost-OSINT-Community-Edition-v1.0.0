@@ -1,6 +1,6 @@
 """
-CyberGhost OSINT Enterprise — Database Models
-SQLAlchemy 2.0 ORM — Elimina completamente SQL Injection via prepared statements
+CyberGhost OSINT Enterprise — Database Models (V15.0)
+SQLAlchemy 2.0 ORM — Multi-tenant, RBAC & Security Focus
 """
 from __future__ import annotations
 
@@ -19,13 +19,14 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    Table,
+    Column
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from backend.core.database import Base
-from backend.core.security import Role
 
 
 def uuid_pk() -> Mapped[uuid.UUID]:
@@ -43,7 +44,6 @@ def utcnow() -> datetime:
 
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
-
 
 class ScanStatus(StrEnum):
     PENDING = "pending"
@@ -94,58 +94,82 @@ class IOCType(StrEnum):
     MUTEX = "mutex"
     REGISTRY_KEY = "registry_key"
 
+# ── Multi-Tenant Model ────────────────────────────────────────────────────────
+
+class Tenant(Base):
+    __tablename__ = "tenants"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    slug: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    tier: Mapped[str] = mapped_column(String(50), default="standard") # standard, enterprise
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    
+    users: Mapped[list["User"]] = relationship("User", back_populates="tenant")
+    scans: Mapped[list["Scan"]] = relationship("Scan", back_populates="tenant")
+    iocs: Mapped[list["IOC"]] = relationship("IOC", back_populates="tenant")
+
+# ── RBAC Models ─────────────────────────────────────────────────────────────
+
+# Many-to-Many para Roles e Permissions
+role_permissions = Table(
+    "role_permissions",
+    Base.metadata,
+    Column("role_id", UUID(as_uuid=True), ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
+    Column("permission_id", UUID(as_uuid=True), ForeignKey("permissions.id", ondelete="CASCADE"), primary_key=True),
+)
+
+class Permission(Base):
+    __tablename__ = "permissions"
+    
+    id: Mapped[uuid.UUID] = uuid_pk()
+    name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False) # ex: "scan:write"
+    description: Mapped[str | None] = mapped_column(Text)
+    
+class Role(Base):
+    __tablename__ = "roles"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    tenant_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True) # Null = System Role
+    name: Mapped[str] = mapped_column(String(100), nullable=False) # Admin, Analyst
+    description: Mapped[str | None] = mapped_column(Text)
+    
+    permissions: Mapped[list["Permission"]] = relationship(secondary=role_permissions)
 
 # ── User Model ────────────────────────────────────────────────────────────────
-
 
 class User(Base):
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = uuid_pk()
-    username: Mapped[str] = mapped_column(
-        String(64), unique=True, nullable=False, index=True
-    )
-    email: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False, index=True
-    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    role_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("roles.id", ondelete="RESTRICT"), nullable=False)
+    
+    username: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
-    role: Mapped[Role] = mapped_column(
-        Enum(Role, name="user_role"), nullable=False, default=Role.VIEWER
-    )
+    
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     full_name: Mapped[str | None] = mapped_column(String(255))
-    organization: Mapped[str | None] = mapped_column(String(255))
-    last_login: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    last_login: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0)
-    locked_until: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=utcnow, nullable=False
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=utcnow,
-        onupdate=utcnow,
-        nullable=False,
-    )
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
 
     # Relationships
-    scans: Mapped[list["Scan"]] = relationship(
-        "Scan", back_populates="user", cascade="all, delete-orphan"
-    )
-    api_keys: Mapped[list["APIKey"]] = relationship(
-        "APIKey", back_populates="user", cascade="all, delete-orphan"
-    )
-    audit_logs: Mapped[list["AuditLog"]] = relationship(
-        "AuditLog", back_populates="user"
-    )
+    tenant: Mapped[Tenant] = relationship("Tenant", back_populates="users")
+    role: Mapped[Role] = relationship("Role")
+    scans: Mapped[list["Scan"]] = relationship("Scan", back_populates="user", cascade="all, delete-orphan")
+    api_keys: Mapped[list["APIKey"]] = relationship("APIKey", back_populates="user", cascade="all, delete-orphan")
+    audit_logs: Mapped[list["AuditLog"]] = relationship("AuditLog", back_populates="user")
 
-    def __repr__(self) -> str:
-        return f"<User {self.username} ({self.role})>"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "email", name="uq_tenant_email"),
+        UniqueConstraint("tenant_id", "username", name="uq_tenant_username"),
+    )
 
 
 # ── API Key Model ─────────────────────────────────────────────────────────────
@@ -181,6 +205,7 @@ class Scan(Base):
     __tablename__ = "scans"
 
     id: Mapped[uuid.UUID] = uuid_pk()
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
@@ -198,6 +223,7 @@ class Scan(Base):
     priority: Mapped[int] = mapped_column(Integer, default=5)  # 1-10, 10=highest
     config: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     error_message: Mapped[str | None] = mapped_column(Text)
+    ai_summary: Mapped[str | None] = mapped_column(Text)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     duration_seconds: Mapped[int | None] = mapped_column(Integer)
@@ -206,14 +232,15 @@ class Scan(Base):
     )
 
     # Relationships
+    tenant: Mapped[Tenant] = relationship("Tenant", back_populates="scans")
     user: Mapped[User | None] = relationship("User", back_populates="scans")
     results: Mapped[list["ScanResult"]] = relationship(
         "ScanResult", back_populates="scan", cascade="all, delete-orphan"
     )
 
     __table_args__ = (
-        Index("idx_scans_user_status", "user_id", "status"),
-        Index("idx_scans_target_type", "target", "scan_type"),
+        Index("idx_scans_tenant_user_status", "tenant_id", "user_id", "status"),
+        Index("idx_scans_tenant_target", "tenant_id", "target"),
         Index("idx_scans_created", "created_at"),
     )
 
@@ -262,6 +289,7 @@ class IOC(Base):
     __tablename__ = "iocs"
 
     id: Mapped[uuid.UUID] = uuid_pk()
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
     value: Mapped[str] = mapped_column(String(512), nullable=False)
     ioc_type: Mapped[IOCType] = mapped_column(
         Enum(IOCType, name="ioc_type"), nullable=False, index=True
@@ -291,9 +319,11 @@ class IOC(Base):
         DateTime(timezone=True), default=utcnow
     )
 
+    tenant: Mapped[Tenant] = relationship("Tenant", back_populates="iocs")
+
     __table_args__ = (
-        UniqueConstraint("value", "ioc_type", name="uq_ioc_value_type"),
-        Index("idx_ioc_value", "value"),
+        UniqueConstraint("tenant_id", "value", "ioc_type", name="uq_tenant_ioc_value_type"),
+        Index("idx_ioc_tenant_value", "tenant_id", "value"),
         Index("idx_ioc_malicious_type", "malicious", "ioc_type"),
     )
 
@@ -305,6 +335,7 @@ class Alert(Base):
     __tablename__ = "alerts"
 
     id: Mapped[uuid.UUID] = uuid_pk()
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     severity: Mapped[Severity] = mapped_column(
@@ -327,6 +358,7 @@ class AuditLog(Base):
     __tablename__ = "audit_logs"
 
     id: Mapped[uuid.UUID] = uuid_pk()
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
@@ -343,6 +375,6 @@ class AuditLog(Base):
     user: Mapped[User | None] = relationship("User", back_populates="audit_logs")
 
     __table_args__ = (
-        Index("idx_audit_user_event", "user_id", "event"),
+        Index("idx_audit_tenant_user_event", "tenant_id", "user_id", "event"),
         Index("idx_audit_created", "created_at"),
     )

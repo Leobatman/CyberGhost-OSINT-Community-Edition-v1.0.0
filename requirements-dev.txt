@@ -47,7 +47,6 @@ memory-profiler>=0.61.0
 py-spy>=0.3.0
 scalene>=1.5.0
 snakeviz>=2.1.0
-cProfile>=2023.0.0
 line-profiler>=4.0.0
 
 # Documentation
@@ -115,19 +114,11 @@ kubernetes>=26.0.0
 
 # Benchmarking
 locust>=2.15.0
-apache-benchmark>=2.4.0
-wrk>=4.2.0
 
 # Load Testing
-jmeter>=5.5.0
 taurus>=4.5.0
 
 # Security Testing
 bandit>=1.7.0
 safety>=2.3.0
 pip-audit>=2.5.0
-vulnscan>=1.0.0
-owasp-zap>=2.12.0
-nikto>=2.5.0
-nmap>=7.93.0
-sqlmap>=1.7.0

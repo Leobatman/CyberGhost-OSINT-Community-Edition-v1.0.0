@@ -18,6 +18,23 @@ x-logging: &default-logging
     tag: "{{.Name}}"
 
 services:
+  # ── HashiCorp Vault (Secret Management) ───────────────────────────────────
+  vault:
+    image: hashicorp/vault:1.15
+    container_name: cyberghost-vault
+    restart: unless-stopped
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=${VAULT_TOKEN:-root}
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+    ports:
+      - "127.0.0.1:8200:8200"
+    networks:
+      - cyberghost_net
+    cap_add:
+      - IPC_LOCK
+    logging: *default-logging
+    <<: *common-labels
+
   # ── API Backend ─────────────────────────────────────────────────────────────
   api:
     build:

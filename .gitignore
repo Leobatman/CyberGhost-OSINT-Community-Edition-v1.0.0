@@ -275,3 +275,9 @@ build/
 
 # Coverage badges
 coverage-badge.svg
+
+# Extraneous binaries
+gitleaks.exe
+kube-score.exe
+gitleaks.zip
+kube-score.tar.gz

@@ -1,159 +1,93 @@
-"use client";
+import Link from "next/link";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Activity, ShieldAlert, Globe, Server, LogOut, Search } from 'lucide-react';
-import api from '@/lib/api';
-
-export default function Dashboard() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [target, setTarget] = useState('');
-  const [scans, setScans] = useState<any[]>([]);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/login');
-    } else {
-      setLoading(false);
-      // Optional: fetch recent scans
-    }
-  }, [router]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    router.push('/login');
-  };
-
-  const startScan = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const response = await api.post('/scans', {
-        target,
-        scan_type: 'full',
-        priority: 5
-      });
-      setScans([response.data, ...scans]);
-      setTarget('');
-    } catch (err) {
-      console.error(err);
-      alert('Failed to start scan');
-    }
-  };
-
-  if (loading) return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">Loading...</div>;
-
+export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 font-sans">
-      {/* Sidebar / Navbar */}
-      <nav className="border-b border-gray-800 bg-gray-900/50 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <ShieldAlert className="w-8 h-8 text-emerald-400" />
-              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
-                CyberGhost OSINT
-              </span>
-            </div>
-            <button onClick={handleLogout} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
-              <LogOut className="w-5 h-5" />
-              <span className="text-sm font-medium">Sign Out</span>
-            </button>
-          </div>
-        </div>
-      </nav>
+    <div className="flex flex-col min-h-screen relative overflow-hidden">
+      
+      {/* Background Decor */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full pointer-events-none">
+        <div className="absolute top-20 left-20 w-96 h-96 bg-[var(--color-cyber-accent)] rounded-full mix-blend-multiply filter blur-[128px] opacity-10 animate-pulse"></div>
+        <div className="absolute top-40 right-20 w-96 h-96 bg-[var(--color-cyber-neon)] rounded-full mix-blend-multiply filter blur-[128px] opacity-10"></div>
+      </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <header className="w-full glass-panel border-b-0 border-x-0 sticky top-0 z-50 py-4 px-8 flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded bg-[var(--color-cyber-accent)]/20 border border-[var(--color-cyber-accent)] flex items-center justify-center">
+            <span className="text-[var(--color-cyber-accent)] font-bold">CG</span>
+          </div>
+          <h1 className="text-xl font-bold tracking-wider glow-text">CYBERGHOST <span className="text-[var(--color-cyber-muted)] font-mono text-sm ml-2">v15.0</span></h1>
+        </div>
         
-        {/* Top Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-6 flex items-center gap-4">
-            <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400"><Activity size={24} /></div>
-            <div>
-              <p className="text-sm text-gray-400">Active Scans</p>
-              <p className="text-2xl font-bold text-white">{scans.filter(s => s.status === 'pending' || s.status === 'running').length}</p>
-            </div>
-          </div>
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-6 flex items-center gap-4">
-            <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-400"><Globe size={24} /></div>
-            <div>
-              <p className="text-sm text-gray-400">Nodes in Graph</p>
-              <p className="text-2xl font-bold text-white">--</p>
-            </div>
-          </div>
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-6 flex items-center gap-4">
-            <div className="p-3 bg-purple-500/10 rounded-xl text-purple-400"><Server size={24} /></div>
-            <div>
-              <p className="text-sm text-gray-400">System Health</p>
-              <p className="text-2xl font-bold text-emerald-400">Operational</p>
-            </div>
-          </div>
+        <nav className="hidden md:flex gap-8 text-sm font-mono tracking-widest text-[var(--color-cyber-muted)]">
+          <Link href="/dashboard" className="hover:text-[var(--color-cyber-accent)] transition-colors">DASHBOARD</Link>
+          <Link href="/intelligence" className="hover:text-[var(--color-cyber-accent)] transition-colors">THREAT INTEL</Link>
+          <Link href="/attack-graph" className="hover:text-[var(--color-cyber-accent)] transition-colors">ATTACK GRAPH</Link>
+          <Link href="/settings" className="hover:text-[var(--color-cyber-accent)] transition-colors">SETTINGS</Link>
+        </nav>
+        
+        <div>
+          <button className="cyber-button px-6 py-2 rounded text-sm font-mono tracking-widest">
+            LOGOUT
+          </button>
         </div>
+      </header>
 
-        {/* New Scan Action */}
-        <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-2xl p-8 shadow-2xl">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <Search className="text-blue-400" />
-            Launch Investigation
-          </h2>
-          <form onSubmit={startScan} className="flex gap-4">
-            <input 
-              type="text" 
-              value={target}
-              onChange={(e) => setTarget(e.target.value)}
-              placeholder="Enter domain, IP, or email (e.g. example.com)"
-              className="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-              required
-            />
-            <button type="submit" className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/30 transition-all active:scale-95">
-              Start Scan
-            </button>
-          </form>
+      <main className="flex-grow container mx-auto px-6 py-12 flex flex-col items-center justify-center relative z-10 text-center">
+        <div className="inline-block px-4 py-1 rounded-full border border-[var(--color-cyber-accent)]/30 bg-[var(--color-cyber-accent)]/10 text-[var(--color-cyber-accent)] text-xs font-mono mb-8 uppercase tracking-widest">
+          Enterprise Security Active
         </div>
+        
+        <h2 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight leading-tight">
+          Attack Surface <br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--color-cyber-accent)] to-[var(--color-cyber-neon)]">Management</span>
+        </h2>
+        
+        <p className="text-[var(--color-cyber-muted)] max-w-2xl mx-auto text-lg mb-12">
+          Discover, map, and secure your digital footprint with advanced OSINT and continuous Threat Intelligence correlation powered by Neo4j Attack Graphs.
+        </p>
 
-        {/* Recent Scans Table */}
-        <div className="bg-gray-800/30 border border-gray-700/50 rounded-2xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-700/50 bg-gray-800/50">
-            <h3 className="font-semibold">Recent Operations</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl text-left">
+          {/* Card 1 */}
+          <div className="glass-panel rounded-xl p-6 group hover:border-[var(--color-cyber-accent)]/50 transition-colors cursor-pointer">
+            <div className="w-12 h-12 rounded-lg bg-[var(--color-cyber-accent)]/10 flex items-center justify-center mb-4 text-[var(--color-cyber-accent)] font-mono text-xl">
+              01
+            </div>
+            <h3 className="text-xl font-bold mb-2">Global Scans</h3>
+            <p className="text-[var(--color-cyber-muted)] text-sm mb-4">
+              Initialize deep recon tasks across domains, IP blocks, and ASN networks.
+            </p>
+            <div className="h-1 w-0 bg-[var(--color-cyber-accent)] group-hover:w-full transition-all duration-300"></div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-400">
-              <thead className="text-xs uppercase bg-gray-900/50 text-gray-500">
-                <tr>
-                  <th className="px-6 py-4 font-medium">Target</th>
-                  <th className="px-6 py-4 font-medium">Type</th>
-                  <th className="px-6 py-4 font-medium">Status</th>
-                  <th className="px-6 py-4 font-medium">Task ID</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800">
-                {scans.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                      No recent scans found.
-                    </td>
-                  </tr>
-                ) : (
-                  scans.map((scan, i) => (
-                    <tr key={i} className="hover:bg-gray-800/30 transition-colors">
-                      <td className="px-6 py-4 font-medium text-gray-200">{scan.target}</td>
-                      <td className="px-6 py-4"><span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded-md text-xs">{scan.scan_type}</span></td>
-                      <td className="px-6 py-4">
-                        <span className="flex items-center gap-2">
-                          <span className={`w-2 h-2 rounded-full ${scan.status === 'pending' ? 'bg-yellow-400' : 'bg-emerald-400'}`}></span>
-                          {scan.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 font-mono text-xs">{scan.celery_task_id || 'pending...'}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+          
+          {/* Card 2 */}
+          <div className="glass-panel rounded-xl p-6 group hover:border-[var(--color-cyber-neon)]/50 transition-colors cursor-pointer">
+            <div className="w-12 h-12 rounded-lg bg-[var(--color-cyber-neon)]/10 flex items-center justify-center mb-4 text-[var(--color-cyber-neon)] font-mono text-xl">
+              02
+            </div>
+            <h3 className="text-xl font-bold mb-2">Attack Graph</h3>
+            <p className="text-[var(--color-cyber-muted)] text-sm mb-4">
+              Explore critical exposure paths visually using the Cypher-powered engine.
+            </p>
+            <div className="h-1 w-0 bg-[var(--color-cyber-neon)] group-hover:w-full transition-all duration-300"></div>
+          </div>
+
+          {/* Card 3 */}
+          <div className="glass-panel rounded-xl p-6 group hover:border-[var(--color-cyber-danger)]/50 transition-colors cursor-pointer">
+            <div className="w-12 h-12 rounded-lg bg-[var(--color-cyber-danger)]/10 flex items-center justify-center mb-4 text-[var(--color-cyber-danger)] font-mono text-xl">
+              03
+            </div>
+            <h3 className="text-xl font-bold mb-2">CTI Feeds (TAXII)</h3>
+            <p className="text-[var(--color-cyber-muted)] text-sm mb-4">
+              Ingest or export STIX 2.1 collections and integrate with your SOC tooling.
+            </p>
+            <div className="h-1 w-0 bg-[var(--color-cyber-danger)] group-hover:w-full transition-all duration-300"></div>
           </div>
         </div>
       </main>
+
+      <footer className="w-full py-6 border-t border-[var(--color-cyber-border)]/50 text-center text-sm font-mono text-[var(--color-cyber-muted)]">
+        CyberGhost OSINT Enterprise © 2026. SECURE BY DESIGN.
+      </footer>
     </div>
   );
 }

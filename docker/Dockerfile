@@ -1,164 +1,163 @@
 # =============================================================================
-# CYBERGHOST OSINT ULTIMATE - Dockerfile
+# CyberGhost OSINT Enterprise — Dockerfile
+# Multi-stage: builder → runtime
+# Corrigido: imagem < 800MB, sem ferramentas de ataque, usuário não-root,
+#            healthcheck real, sem duplicatas
 # =============================================================================
 
-# Estágio 1: Builder
-FROM golang:1.21-alpine AS builder
+# ── Stage 1: Python Dependencies Builder ─────────────────────────────────────
+FROM python:3.11-slim-bookworm AS python-builder
 
-LABEL maintainer="CyberGhost <cyberghost@protonmail.com>"
-LABEL version="7.0"
-LABEL description="CYBERGHOST OSINT Ultimate - Advanced OSINT Framework"
+WORKDIR /build
 
-# Instalar dependências do builder
-RUN apk add --no-cache \
-    git \
-    make \
+# Install build tools only in builder stage
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
-    musl-dev \
-    libc-dev \
+    g++ \
+    libpq-dev \
     libffi-dev \
-    openssl-dev
+    libssl-dev \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-# Configurar Go
-ENV GOPATH=/go
-ENV PATH=$PATH:$GOPATH/bin
-WORKDIR /build
+# Install Python dependencies into a virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Instalar ferramentas Go
-RUN go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest && \
-    go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest && \
-    go install -v github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest && \
-    go install -v github.com/projectdiscovery/naabu/v2/cmd/naabu@latest && \
-    go install -v github.com/projectdiscovery/dnsx/cmd/dnsx@latest && \
-    go install -v github.com/tomnomnom/assetfinder@latest && \
-    go install -v github.com/tomnomnom/waybackurls@latest && \
-    go install -v github.com/ffuf/ffuf@latest && \
-    go install -v github.com/lc/gau/v2/cmd/gau@latest && \
-    go install -v github.com/hakluke/hakrawler@latest && \
-    go install -v github.com/OJ/gobuster/v3@latest && \
-    go install -v github.com/d3mondev/puredns/v2@latest
+COPY pyproject.toml requirements.txt* ./
+RUN pip install --upgrade pip wheel setuptools && \
+    pip install --no-cache-dir -r requirements.txt 2>/dev/null || \
+    pip install --no-cache-dir -e .
 
-# Estágio 2: Python builder
-FROM python:3.11-slim AS python-builder
+# ── Stage 2: OSINT Tools Builder ─────────────────────────────────────────────
+FROM debian:bookworm-slim AS tools-builder
 
-WORKDIR /build
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget \
+    curl \
+    ca-certificates \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
 
-# Instalar dependências Python
-COPY requirements.txt .
-RUN pip install --user --no-cache-dir -r requirements.txt
+WORKDIR /tools
 
-# Estágio 3: Final
-FROM alpine:3.19
+# amass (subdomain enumeration)
+RUN wget -q https://github.com/owasp-amass/amass/releases/download/v4.2.0/amass_linux_amd64.zip && \
+    unzip -q amass_linux_amd64.zip && \
+    mv amass_linux_amd64/amass /usr/local/bin/ && \
+    rm -rf amass_*
 
-# Instalar dependências do sistema
-RUN apk add --no-cache \
-    bash \
+# subfinder
+RUN wget -q https://github.com/projectdiscovery/subfinder/releases/download/v2.6.6/subfinder_2.6.6_linux_amd64.zip && \
+    unzip -q subfinder_2.6.6_linux_amd64.zip && \
+    mv subfinder /usr/local/bin/ && \
+    rm -f subfinder_*
+
+# nuclei (vulnerability scanner, NOT attack tool)
+RUN wget -q https://github.com/projectdiscovery/nuclei/releases/download/v3.3.7/nuclei_3.3.7_linux_amd64.zip && \
+    unzip -q nuclei_3.3.7_linux_amd64.zip && \
+    mv nuclei /usr/local/bin/ && \
+    rm -f nuclei_*
+
+# httpx (HTTP prober)
+RUN wget -q https://github.com/projectdiscovery/httpx/releases/download/v1.6.8/httpx_1.6.8_linux_amd64.zip && \
+    unzip -q httpx_1.6.8_linux_amd64.zip && \
+    mv httpx /usr/local/bin/ && \
+    rm -f httpx_*
+
+# dnsx (DNS resolver)
+RUN wget -q https://github.com/projectdiscovery/dnsx/releases/download/v1.2.1/dnsx_1.2.1_linux_amd64.zip && \
+    unzip -q dnsx_1.2.1_linux_amd64.zip && \
+    mv dnsx /usr/local/bin/ && \
+    rm -f dnsx_*
+
+# theHarvester (email/domain OSINT)
+# Installed via pip in python-builder stage
+
+# ── Stage 3: Runtime ──────────────────────────────────────────────────────────
+FROM debian:bookworm-slim AS runtime
+
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION="8.0.0"
+
+LABEL org.opencontainers.image.title="CyberGhost OSINT Enterprise"
+LABEL org.opencontainers.image.version="${VERSION}"
+LABEL org.opencontainers.image.created="${BUILD_DATE}"
+LABEL org.opencontainers.image.revision="${VCS_REF}"
+LABEL org.opencontainers.image.licenses="GPL-3.0"
+LABEL org.opencontainers.image.source="https://github.com/cyberghost/cyberghost-osint"
+
+# Install only runtime system dependencies (no build tools)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Python runtime
+    python3 \
+    libpq5 \
+    libssl3 \
+    # Networking tools (OSINT only, not attack tools)
+    nmap \
+    dnsutils \
+    whois \
     curl \
     wget \
-    jq \
-    nmap \
-    whois \
-    bind-tools \
-    netcat-openbsd \
-    nikto \
-    sqlmap \
-    hydra \
-    john \
-    aircrack-ng \
-    wireshark \
-    tshark \
-    libpcap \
-    libxml2 \
-    libxslt \
-    ruby \
-    perl \
-    make \
-    cmake \
-    autoconf \
-    automake \
-    libtool \
-    pkgconfig \
-    zlib \
-    bzip2 \
-    readline \
-    sqlite \
-    ncurses \
-    tk \
-    libffi \
-    openssl \
+    # Utilities
     ca-certificates \
-    git \
-    nmap \
-    masscan \
-    python3 \
-    py3-pip \
-    go \
-    nodejs \
-    npm \
-    yarn \
-    tor \
-    proxychains-ng \
-    && rm -rf /var/cache/apk/*
+    tini \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copiar binários Go do builder
-COPY --from=builder /go/bin/* /usr/local/bin/
+# Copy Python venv from builder
+COPY --from=python-builder /opt/venv /opt/venv
 
-# Copiar Python packages
-COPY --from=python-builder /root/.local /root/.local
-ENV PATH=/root/.local/bin:$PATH
+# Copy OSINT tools from tools-builder
+COPY --from=tools-builder /usr/local/bin/amass /usr/local/bin/
+COPY --from=tools-builder /usr/local/bin/subfinder /usr/local/bin/
+COPY --from=tools-builder /usr/local/bin/nuclei /usr/local/bin/
+COPY --from=tools-builder /usr/local/bin/httpx /usr/local/bin/
+COPY --from=tools-builder /usr/local/bin/dnsx /usr/local/bin/
 
-# Criar usuário não-root
-RUN addgroup -g 1000 -S cyberghost && \
-    adduser -u 1000 -S cyberghost -G cyberghost
+# Set PATH to include venv
+ENV PATH="/opt/venv/bin:$PATH"
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONPATH="/app"
 
-# Criar estrutura de diretórios
-RUN mkdir -p /opt/cyberghost \
-    /opt/cyberghost/data \
-    /opt/cyberghost/logs \
-    /opt/cyberghost/reports \
-    /opt/cyberghost/temp \
-    /opt/cyberghost/config \
-    /opt/cyberghost/wordlists \
-    /opt/cyberghost/tools \
-    /home/cyberghost/.cyberghost \
-    && chown -R cyberghost:cyberghost /opt/cyberghost /home/cyberghost
+# Create non-root user
+RUN groupadd --gid 1000 cyberghost && \
+    useradd --uid 1000 --gid 1000 --no-create-home --shell /bin/sh cyberghost
 
-# Copiar código fonte
-COPY --chown=cyberghost:cyberghost . /opt/cyberghost/
+WORKDIR /app
 
-# Configurar ambiente
-WORKDIR /opt/cyberghost
+# Copy application code
+COPY --chown=cyberghost:cyberghost backend/ ./backend/
+COPY --chown=cyberghost:cyberghost workers/ ./workers/
+COPY --chown=cyberghost:cyberghost intel/ ./intel/
+COPY --chown=cyberghost:cyberghost recon/ ./recon/
+COPY --chown=cyberghost:cyberghost alembic/ ./alembic/
+COPY --chown=cyberghost:cyberghost alembic.ini ./
 
-# Configurar PATH
-ENV PATH=/opt/cyberghost/src/core:$PATH
-ENV PATH=/opt/cyberghost/scripts:$PATH
-ENV CYBERGHOST_HOME=/opt/cyberghost
-ENV CONFIG_DIR=/home/cyberghost/.cyberghost
+# Create required directories
+RUN mkdir -p /app/data /app/logs /app/reports && \
+    chown -R cyberghost:cyberghost /app
 
-# Tornar scripts executáveis
-RUN chmod +x /opt/cyberghost/src/core/*.sh \
-    /opt/cyberghost/scripts/*.sh
-
-# Configurar Tor
-RUN echo "SOCKSPort 9050" > /etc/tor/torrc && \
-    echo "ControlPort 9051" >> /etc/tor/torrc && \
-    echo "CookieAuthentication 1" >> /etc/tor/torrc
-
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD pgrep tor > /dev/null || exit 1
-
-# Volumes
-VOLUME ["/opt/cyberghost/data", "/opt/cyberghost/reports", "/opt/cyberghost/config"]
-
-# Portas
-EXPOSE 9050 9051 8080 8443
-
-# Usuário não-root
+# Switch to non-root
 USER cyberghost
 
-# Entrypoint
-ENTRYPOINT ["/opt/cyberghost/scripts/docker-entrypoint.sh"]
+# Expose only the API port (NOT Tor control port)
+EXPOSE 8000
 
-# Comando padrão
-CMD ["cg"]
+# Health check against real application endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/api/ready || exit 1
+
+# Use tini as init (handles signals properly)
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+# Default: run FastAPI with Gunicorn (production-grade)
+CMD ["gunicorn", "backend.main:app", \
+     "--worker-class", "uvicorn.workers.UvicornWorker", \
+     "--workers", "4", \
+     "--bind", "0.0.0.0:8000", \
+     "--timeout", "120", \
+     "--keepalive", "5", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-"]

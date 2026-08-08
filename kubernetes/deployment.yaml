@@ -10,7 +10,7 @@ metadata:
   labels:
     app: cyberghost
     component: core
-    version: 7.0.0
+    version: 8.0.0
 spec:
   replicas: 3
   selector:
@@ -27,7 +27,7 @@ spec:
       labels:
         app: cyberghost
         component: core
-        version: 7.0.0
+        version: 8.0.0
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8080"
@@ -40,7 +40,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: cyberghost
-        image: cyberghost/cyberghost-osint:7.0.0
+        image: cyberghost/cyberghost-osint:8.0.0
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
@@ -165,7 +165,7 @@ metadata:
   labels:
     app: cyberghost
     component: worker
-    version: 7.0.0
+    version: 8.0.0
 spec:
   replicas: 5
   selector:
@@ -180,7 +180,7 @@ spec:
     spec:
       containers:
       - name: worker
-        image: cyberghost/cyberghost-osint:7.0.0
+        image: cyberghost/cyberghost-osint:8.0.0
         command: ["celery", "-A", "src.tasks", "worker", "--loglevel=info"]
         env:
         - name: REDIS_HOST
@@ -245,7 +245,7 @@ spec:
     spec:
       containers:
       - name: beat
-        image: cyberghost/cyberghost-osint:7.0.0
+        image: cyberghost/cyberghost-osint:8.0.0
         command: ["celery", "-A", "src.tasks", "beat", "--loglevel=info"]
         env:
         - name: REDIS_HOST
