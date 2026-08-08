@@ -19,7 +19,7 @@ You can install CyberGhost OSINT directly from the source:
 
 ```bash
 git clone https://github.com/Leobatman/CyberGhost-OSINT-Community-Edition-v1.0.0
-cd cyberghost-osint
+cd CyberGhost-OSINT-Community-Edition-v1.0.0
 pip install .
 ```
 
